@@ -1,0 +1,226 @@
+:root {
+  --companion-width: min(42vw, 18rem);
+
+  color: #fff8ee;
+  background: #16121f;
+  font-family: Inter, ui-rounded, system-ui, sans-serif;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background: #16121f;
+}
+
+.feed {
+  height: 100%;
+  padding-block: 9dvh;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior-y: contain;
+}
+
+.game-card {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  width: min(100%, 32rem);
+  height: 82dvh;
+  margin-inline: auto;
+  overflow: hidden;
+  cursor: pointer;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+}
+
+.game-card + .game-card {
+  margin-top: 2dvh;
+}
+
+.game-card::before {
+  position: absolute;
+  inset: 8% 6%;
+  z-index: -1;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 2rem;
+  background: rgb(255 255 255 / 8%);
+  box-shadow: 0 2rem 5rem rgb(0 0 0 / 25%);
+  content: '';
+}
+
+.game-card--berry {
+  background: radial-gradient(circle at 50% 32%, #ec94b6 0, #714367 45%, #23182d 100%);
+}
+
+.game-card--cloud {
+  background: radial-gradient(circle at 50% 30%, #a8e1ef 0, #597ca4 48%, #20263b 100%);
+}
+
+.game-card--night {
+  background: radial-gradient(circle at 50% 32%, #b0a1ff 0, #514579 45%, #171527 100%);
+}
+
+.game-card__copy {
+  align-self: end;
+  z-index: 2;
+  padding-top: 0;
+  padding-right: 2.2rem;
+  padding-bottom: max(3rem, env(safe-area-inset-bottom));
+  padding-left: max(
+    2.2rem,
+    calc(var(--companion-width) + 1rem - max(0px, (100vw - 32rem) / 2))
+  );
+  pointer-events: none;
+  text-align: right;
+  text-shadow: 0 2px 16px rgb(0 0 0 / 55%);
+}
+
+.game-card__copy h1 {
+  margin: 0.35rem 0;
+  font-size: clamp(2.25rem, 10vw, 4rem);
+  letter-spacing: -0.055em;
+}
+
+.game-card__copy p {
+  margin: 0;
+  color: rgb(255 248 238 / 76%);
+}
+
+.game-card__status {
+  display: inline-block;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  background: rgb(25 17 33 / 58%);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.companion {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  width: 100vw;
+  height: 100dvh;
+  pointer-events: none;
+}
+
+.companion__stage,
+.character-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.game-card.is-playing {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  width: 100%;
+  height: 100dvh;
+  margin: 0;
+  animation: card-push-in 650ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.game-card.is-playing::before {
+  inset: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.companion.is-playing {
+  z-index: 11;
+}
+
+.game-card.is-playing .game-card__copy {
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.feed.has-active-game {
+  overflow: hidden;
+}
+
+.handoff-fade {
+  position: fixed;
+  inset: 0;
+  z-index: 19;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease-in-out;
+}
+
+.handoff-fade.is-covering {
+  opacity: 1;
+}
+
+.game-close {
+  position: fixed;
+  top: max(1rem, env(safe-area-inset-top));
+  right: max(1rem, env(safe-area-inset-right));
+  z-index: 20;
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 36%);
+  border-radius: 999px;
+  color: inherit;
+  background: rgb(20 15 28 / 72%);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  place-items: center;
+}
+
+.game-close[hidden] {
+  display: none;
+}
+
+.game-close:focus-visible {
+  outline: 3px solid #fff8ee;
+  outline-offset: 3px;
+}
+
+.loading {
+  position: fixed;
+  top: max(1rem, env(safe-area-inset-top));
+  left: 50%;
+  z-index: 20;
+  padding: 0.6rem 0.9rem;
+  border-radius: 999px;
+  background: rgb(20 15 28 / 78%);
+  font-size: 0.8rem;
+  transform: translateX(-50%);
+}
+
+@keyframes card-push-in {
+  from {
+    clip-path: inset(9dvh max(0px, calc((100vw - 32rem) / 2)));
+  }
+
+  to {
+    clip-path: inset(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-card.is-playing {
+    animation-duration: 1ms;
+  }
+
+  .handoff-fade {
+    transition-duration: 1ms;
+  }
+}

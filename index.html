@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#16121f" />
+    <title>Bun Bun Bunny</title>
+  </head>
+  <body>
+    <main class="feed" aria-label="Game feed">
+      <article class="game-card game-card--berry" data-game="Berry Bounce" data-reaction="excited">
+        <div class="game-card__copy">
+          <span class="game-card__status">Greg + 12 playing</span>
+          <h1>Berry Bounce</h1>
+          <p>Tap to leap in</p>
+        </div>
+      </article>
+      <article class="game-card game-card--cloud" data-game="Cloud Hop">
+        <div class="game-card__copy">
+          <span class="game-card__status">Cold</span>
+          <h1>Cloud Hop</h1>
+          <p>Tap to start a room</p>
+        </div>
+      </article>
+      <article class="game-card game-card--night" data-game="Moon Blocks" data-reaction="excited">
+        <div class="game-card__copy">
+          <span class="game-card__status">Played before</span>
+          <h1>Moon Blocks</h1>
+          <p>Tap to leap in</p>
+        </div>
+      </article>
+    </main>
+    <aside class="companion" aria-label="Your companion">
+      <div class="companion__stage"></div>
+    </aside>
+    <div class="handoff-fade" aria-hidden="true"></div>
+    <button class="game-close" type="button" aria-label="Close game" hidden>X</button>
+    <div class="loading" role="status">Warming up Bunny Boy...</div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
