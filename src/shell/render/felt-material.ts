@@ -126,45 +126,121 @@ const feltMaterial = (
   return material;
 };
 
+// Felt fuzz is a single expanded skinned pass (spec §3.5: no layered shell fur).
+// The hull is pushed a few screen-pixels along the outward normal and rendered
+// double-sided, so sparse fiber tips dust the whole pink/blue surface and poke
+// past the silhouette to break the hard edge. High-frequency UV-space noise makes
+// the fibers; a grazing term makes them denser at the silhouette. Tune by eye:
+const FRINGE_WIDTH_PX = 2; // how far the fuzz tips lift off the surface
+const FRINGE_WIDTH_JITTER = 0.5; // ragged-edge variation, 0..1 of the width
+const FRINGE_UV_SCALE = 220; // fiber density (higher = finer fuzz)
+const FRINGE_FIBER_THRESHOLD = new THREE.Vector2(0.35, 0.7); // noise cutoff → fiber sparsity
+const FRINGE_STRENGTH = 0.85; // peak fuzz opacity
+const FRINGE_BASE = 0.35; // fuzz density on camera-facing surface
+const FRINGE_RIM_BOOST = 0.9; // extra fuzz density at the silhouette
+const FRINGE_LIFT = 0.125; // how much fiber tips whiten (catch light)
+
+const FRINGE_NOISE_GLSL = `
+float fringeHash(vec3 p) {
+  p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
+  p *= 17.0;
+  return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+float fringeNoise(vec3 x) {
+  vec3 i = floor(x);
+  vec3 f = fract(x);
+  f = f * f * (3.0 - 2.0 * f);
+  float nx00 = mix(fringeHash(i), fringeHash(i + vec3(1.0, 0.0, 0.0)), f.x);
+  float nx10 = mix(fringeHash(i + vec3(0.0, 1.0, 0.0)), fringeHash(i + vec3(1.0, 1.0, 0.0)), f.x);
+  float nx01 = mix(fringeHash(i + vec3(0.0, 0.0, 1.0)), fringeHash(i + vec3(1.0, 0.0, 1.0)), f.x);
+  float nx11 = mix(fringeHash(i + vec3(0.0, 1.0, 1.0)), fringeHash(i + vec3(1.0, 1.0, 1.0)), f.x);
+  return mix(mix(nx00, nx10, f.y), mix(nx01, nx11, f.y), f.z);
+}
+float fringeFibers(vec2 uv) {
+  vec3 p = vec3(uv, 0.0);
+  float f = 0.52 * fringeNoise(p);
+  f += 0.30 * fringeNoise(p * 2.3 + 11.0);
+  f += 0.18 * fringeNoise(p * 5.1 + 23.0);
+  return f;
+}
+`;
+
+const FRINGE_VERTEX_DECLS = `
+uniform float fringePixels;
+uniform vec2 fringeViewport;
+uniform float fringeWidthJitter;
+uniform float fringeUvScale;
+varying vec2 vFringeUv;
+varying vec3 vFringeNormalView;
+varying vec3 vFringeViewDir;
+`;
+
+const FRINGE_VERTEX_BODY = `vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);
+vFringeUv = uv;
+vFringeNormalView = normalize(transformedNormal);
+vFringeViewDir = normalize(-mvPosition.xyz);
+vec4 clipPosition = projectionMatrix * mvPosition;
+vec2 projectedNormal = (projectionMatrix * vec4(transformedNormal, 0.0)).xy;
+vec2 outward = projectedNormal / max(length(projectedNormal), 1e-4);
+float fringeJitter = mix(1.0 - fringeWidthJitter, 1.0 + fringeWidthJitter, fringeHash(vec3(uv * fringeUvScale, 0.0)));
+clipPosition.xy += outward * (2.0 * fringePixels * fringeJitter / fringeViewport) * clipPosition.w;
+gl_Position = clipPosition;`;
+
+const FRINGE_FRAGMENT_DECLS = `
+uniform float fringeUvScale;
+uniform vec2 fringeThreshold;
+uniform float fringeStrength;
+uniform float fringeBase;
+uniform float fringeRimBoost;
+uniform float fringeLift;
+varying vec2 vFringeUv;
+varying vec3 vFringeNormalView;
+varying vec3 vFringeViewDir;
+`;
+
+const FRINGE_FRAGMENT_BODY = `#include <alphamap_fragment>
+vec3 fringeNormal = normalize(vFringeNormalView);
+vec3 fringeView = normalize(vFringeViewDir);
+float fringeGraze = 1.0 - abs(dot(fringeNormal, fringeView));
+float fringeRaw = fringeFibers(vFringeUv * fringeUvScale);
+float fringeFiberAa = fwidth(fringeRaw);
+float fringeFiber = smoothstep(fringeThreshold.x - fringeFiberAa, fringeThreshold.y + fringeFiberAa, fringeRaw);
+float fringeDensity = clamp(fringeBase + fringeGraze * fringeRimBoost, 0.0, 1.0);
+diffuseColor.a *= fringeFiber * fringeDensity * fringeStrength;
+diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0), fringeFiber * fringeLift);`;
+
 const fringeMaterial = (
   source: THREE.MeshStandardMaterial,
   mask: THREE.Texture,
   viewport: THREE.Vector2,
 ): THREE.MeshBasicMaterial => {
   const material = new THREE.MeshBasicMaterial({
-    alphaHash: true,
     alphaMap: mask,
     color: source.color,
     depthWrite: false,
     map: source.map,
-    opacity: 0.42,
-    side: THREE.BackSide,
+    side: THREE.DoubleSide,
+    transparent: true,
   });
   material.name = `${source.name}-felt-fringe`;
   material.onBeforeCompile = (shader) => {
-    shader.uniforms.fringePixels = { value: 1.5 };
+    shader.uniforms.fringePixels = { value: FRINGE_WIDTH_PX };
     shader.uniforms.fringeViewport = { value: viewport };
+    shader.uniforms.fringeWidthJitter = { value: FRINGE_WIDTH_JITTER };
+    shader.uniforms.fringeUvScale = { value: FRINGE_UV_SCALE };
+    shader.uniforms.fringeThreshold = { value: FRINGE_FIBER_THRESHOLD };
+    shader.uniforms.fringeStrength = { value: FRINGE_STRENGTH };
+    shader.uniforms.fringeBase = { value: FRINGE_BASE };
+    shader.uniforms.fringeRimBoost = { value: FRINGE_RIM_BOOST };
+    shader.uniforms.fringeLift = { value: FRINGE_LIFT };
     shader.vertexShader = shader.vertexShader
-      .replace(
-        'void main() {',
-        `uniform float fringePixels;
-uniform vec2 fringeViewport;
-
-void main() {`,
-      )
-      .replace(
-        '#include <project_vertex>',
-        `float fringeNoise = fract(sin(dot(position.xyz, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
-float fringeWidth = fringePixels * mix(0.55, 1.0, fringeNoise);
-vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);
-vec4 clipPosition = projectionMatrix * mvPosition;
-vec2 projectedNormal = (projectionMatrix * vec4(transformedNormal, 0.0)).xy;
-vec2 fringeDirection = -projectedNormal / max(length(projectedNormal), 0.0001);
-clipPosition.xy += fringeDirection * (2.0 * fringeWidth / fringeViewport) * clipPosition.w;
-gl_Position = clipPosition;`,
-      );
+      .replace('void main() {', `${FRINGE_VERTEX_DECLS}${FRINGE_NOISE_GLSL}\nvoid main() {`)
+      .replace('#include <project_vertex>', FRINGE_VERTEX_BODY);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('void main() {', `${FRINGE_FRAGMENT_DECLS}${FRINGE_NOISE_GLSL}\nvoid main() {`)
+      .replace('#include <alphamap_fragment>', FRINGE_FRAGMENT_BODY);
   };
-  material.customProgramCacheKey = () => 'felt-fringe-v1';
+  material.customProgramCacheKey = () => 'felt-fringe-v4';
   return material;
 };
 
