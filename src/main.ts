@@ -27,6 +27,7 @@ const companion = document.querySelector<HTMLElement>('.companion');
 const companionStage = document.querySelector<HTMLElement>('.companion__stage');
 const closeButton = document.querySelector<HTMLButtonElement>('.game-close');
 const handoffFade = document.querySelector<HTMLElement>('.handoff-fade');
+const bottomNav = document.querySelector<HTMLElement>('.bottom-nav');
 const initialCard = cards[0];
 
 if (
@@ -102,7 +103,11 @@ const layoutCharacter = (): void => {
   const horizontalSpan = verticalSpan * camera.aspect;
   const scale = characterBaseScale * displaySize;
   const feedCenterX = -horizontalSpan / 2 + (characterWidth * displaySize) / 2 + horizontalSpan * 0.01;
-  const feedCenterY = -verticalSpan / 2 + (characterHeight * displaySize) / 2 + verticalSpan * 0.025;
+  // Lift the resting companion clear of the bottom nav (canvas is full-viewport).
+  const worldPerPixel = verticalSpan / Math.max(1, renderer.domElement.clientHeight);
+  const navInset = (bottomNav?.offsetHeight ?? 0) * worldPerPixel;
+  const feedCenterY =
+    -verticalSpan / 2 + (characterHeight * displaySize) / 2 + verticalSpan * 0.025 + navInset;
   const leapProgress = leapStartedAt === undefined
     ? 0
     : Math.min(1, (timer.getElapsed() - leapStartedAt) / leapDuration);

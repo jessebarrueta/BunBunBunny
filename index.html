@@ -9,33 +9,79 @@
   <body>
     <main class="feed" aria-label="Game feed">
       <article class="game-card game-card--berry" data-game="Berry Bounce" data-reaction="excited">
-        <div class="game-card__copy">
-          <span class="game-card__status">Greg + 12 playing</span>
-          <h1>Berry Bounce</h1>
-          <p>Tap to leap in</p>
+        <div class="game-card__chrome">
+          <header class="game-card__top">
+            <span class="pill pill--live"><span class="pill__dot"></span>12 playing now</span>
+            <ul class="avatars" aria-label="Friends here">
+              <li class="avatar">🐰</li>
+              <li class="avatar">🐲</li>
+              <li class="avatar">🐱</li>
+              <li class="avatar">🦊</li>
+            </ul>
+          </header>
+          <footer class="game-card__bottom">
+            <span class="title-chip"><span class="title-chip__crown" aria-hidden="true">👑</span>Berry Bounce</span>
+            <span class="cta cta--live">Tap to jump in</span>
+          </footer>
         </div>
       </article>
+
       <article class="game-card game-card--cloud" data-game="Cloud Hop">
-        <div class="game-card__copy">
-          <span class="game-card__status">Cold</span>
-          <h1>Cloud Hop</h1>
-          <p>Tap to start a room</p>
+        <div class="game-card__chrome">
+          <header class="game-card__top">
+            <span class="pill pill--cold"><span class="pill__dot"></span>Cold</span>
+          </header>
+          <footer class="game-card__bottom">
+            <span class="title-chip"><span class="title-chip__crown" aria-hidden="true">👑</span>Cloud Hop</span>
+            <span class="cta">Tap to start a room</span>
+          </footer>
         </div>
       </article>
+
       <article class="game-card game-card--night" data-game="Moon Blocks" data-reaction="excited">
-        <div class="game-card__copy">
-          <span class="game-card__status">Played before</span>
-          <h1>Moon Blocks</h1>
-          <p>Tap to leap in</p>
+        <div class="game-card__chrome">
+          <header class="game-card__top">
+            <span class="pill pill--live"><span class="pill__dot"></span>5 playing now</span>
+            <ul class="avatars" aria-label="Friends here">
+              <li class="avatar">🐻</li>
+              <li class="avatar">🐸</li>
+              <li class="avatar">🐼</li>
+            </ul>
+          </header>
+          <footer class="game-card__bottom">
+            <span class="title-chip"><span class="title-chip__crown" aria-hidden="true">👑</span>Moon Blocks</span>
+            <span class="cta cta--live">Tap to jump in</span>
+          </footer>
         </div>
       </article>
     </main>
+
     <aside class="companion" aria-label="Your companion">
       <div class="companion__stage"></div>
     </aside>
+
     <div class="handoff-fade" aria-hidden="true"></div>
     <button class="game-close" type="button" aria-label="Close game" hidden>X</button>
     <div class="loading" role="status">Warming up Bunny Boy...</div>
+
+    <nav class="bottom-nav" aria-label="Primary">
+      <button class="nav-item is-active" type="button" aria-current="page">
+        <span class="nav-item__icon" aria-hidden="true">🚀</span><span class="nav-item__label">Feed</span>
+      </button>
+      <button class="nav-item" type="button">
+        <span class="nav-item__icon" aria-hidden="true">👥</span><span class="nav-item__label">Friends</span>
+      </button>
+      <button class="nav-item" type="button">
+        <span class="nav-item__icon" aria-hidden="true">🧰</span><span class="nav-item__label">Inventory</span>
+      </button>
+      <button class="nav-item" type="button">
+        <span class="nav-item__icon" aria-hidden="true">👤</span><span class="nav-item__label">Profile</span>
+      </button>
+      <button class="nav-item" type="button">
+        <span class="nav-item__icon" aria-hidden="true">⚙️</span><span class="nav-item__label">Settings</span>
+      </button>
+    </nav>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -1,5 +1,9 @@
 :root {
   --companion-width: min(42vw, 18rem);
+  --card-max: 30rem;
+  --card-gutter: 1rem;
+  --feed-pad: 11dvh;
+  --nav-height: 4.5rem;
 
   color: #fff8ee;
   background: #16121f;
@@ -19,12 +23,15 @@ body {
 }
 
 body {
+  display: flex;
+  flex-direction: column;
   background: #16121f;
 }
 
 .feed {
-  height: 100%;
-  padding-block: 9dvh;
+  flex: 1;
+  min-height: 0;
+  padding-block: var(--feed-pad);
   overflow-y: auto;
   scroll-snap-type: y mandatory;
   overscroll-behavior-y: contain;
@@ -32,29 +39,43 @@ body {
 
 .game-card {
   position: relative;
-  isolation: isolate;
-  display: grid;
-  width: min(100%, 32rem);
-  height: 82dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: min(calc(100% - 2 * var(--card-gutter)), var(--card-max));
+  height: 70dvh;
   margin-inline: auto;
+  padding: 1.35rem;
   overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 1.85rem;
+  box-shadow: 0 1.4rem 3.2rem rgb(0 0 0 / 40%);
   cursor: pointer;
+  isolation: isolate;
   scroll-snap-align: center;
   scroll-snap-stop: always;
+  transition: opacity 220ms ease, transform 220ms ease;
 }
 
 .game-card + .game-card {
-  margin-top: 2dvh;
+  margin-top: 2.4dvh;
 }
 
-.game-card::before {
+/* Neighbors recede so the centered card is clearly the focus (spec §9.2). */
+.game-card:not(.is-focused) {
+  opacity: 0.55;
+  transform: scale(0.965);
+}
+
+/* Bottom vignette keeps the chrome legible over any preview art. */
+.game-card::after {
   position: absolute;
-  inset: 8% 6%;
-  z-index: -1;
-  border: 1px solid rgb(255 255 255 / 18%);
-  border-radius: 2rem;
-  background: rgb(255 255 255 / 8%);
-  box-shadow: 0 2rem 5rem rgb(0 0 0 / 25%);
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(to top, rgb(9 7 14 / 78%) 0%, rgb(9 7 14 / 0%) 34%),
+    linear-gradient(to bottom, rgb(9 7 14 / 38%) 0%, rgb(9 7 14 / 0%) 22%);
+  pointer-events: none;
   content: '';
 }
 
@@ -70,41 +91,129 @@ body {
   background: radial-gradient(circle at 50% 32%, #b0a1ff 0, #514579 45%, #171527 100%);
 }
 
-.game-card__copy {
-  align-self: end;
-  z-index: 2;
-  padding-top: 0;
-  padding-right: 2.2rem;
-  padding-bottom: max(3rem, env(safe-area-inset-bottom));
-  padding-left: max(
-    2.2rem,
-    calc(var(--companion-width) + 1rem - max(0px, (100vw - 32rem) / 2))
-  );
+.game-card__chrome {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
   pointer-events: none;
-  text-align: right;
-  text-shadow: 0 2px 16px rgb(0 0 0 / 55%);
+  transition: opacity 160ms ease;
 }
 
-.game-card__copy h1 {
-  margin: 0.35rem 0;
-  font-size: clamp(2.25rem, 10vw, 4rem);
-  letter-spacing: -0.055em;
+.game-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
-.game-card__copy p {
-  margin: 0;
-  color: rgb(255 248 238 / 76%);
+.game-card__bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.7rem;
+  /* Companion owns the lower-left; the action cluster stays contained on the right (spec §9.4). */
+  max-width: 66%;
+  margin-left: auto;
 }
 
-.game-card__status {
-  display: inline-block;
-  padding: 0.4rem 0.7rem;
+.pill {
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.4rem 0.72rem;
   border-radius: 999px;
-  background: rgb(25 17 33 / 58%);
-  font-size: 0.8rem;
+  background: rgb(16 11 22 / 62%);
+  backdrop-filter: blur(8px);
+  font-size: 0.78rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.01em;
+}
+
+.pill__dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: #34d27b;
+  box-shadow: 0 0 0.5rem #34d27b;
+}
+
+.pill--cold {
+  color: rgb(255 248 238 / 78%);
   text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.pill--cold .pill__dot {
+  background: #7a8290;
+  box-shadow: none;
+}
+
+.avatars {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.avatar {
+  display: grid;
+  width: 2.05rem;
+  height: 2.05rem;
+  margin-left: -0.5rem;
+  border: 2px solid rgb(255 248 238 / 85%);
+  border-radius: 999px;
+  background: rgb(40 30 55 / 92%);
+  font-size: 1rem;
+  place-items: center;
+}
+
+.avatar:first-child {
+  margin-left: 0;
+}
+
+.title-chip {
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+  max-width: 100%;
+  padding: 0.42rem 0.8rem;
+  border-radius: 999px;
+  background: rgb(16 11 22 / 58%);
+  backdrop-filter: blur(8px);
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.title-chip__crown {
+  font-size: 0.85rem;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.78rem 1.55rem;
+  border: 1.5px solid rgb(255 255 255 / 55%);
+  border-radius: 999px;
+  background: rgb(20 15 28 / 35%);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.cta--live {
+  border-color: transparent;
+  background:
+    linear-gradient(rgb(20 15 28 / 55%), rgb(20 15 28 / 55%)) padding-box,
+    linear-gradient(90deg, #ff7ac6, #7ad4ff) border-box;
+  border: 2px solid transparent;
+  box-shadow: 0 0 1.6rem rgb(255 122 198 / 45%), 0 0 1.6rem rgb(122 212 255 / 35%);
 }
 
 .companion {
@@ -122,6 +231,53 @@ body {
   height: 100%;
 }
 
+.bottom-nav {
+  z-index: 6;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-around;
+  height: calc(var(--nav-height) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  border-top: 1px solid rgb(255 255 255 / 8%);
+  background: rgb(13 10 19 / 88%);
+  backdrop-filter: blur(12px);
+  transition: transform 240ms ease;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  align-items: center;
+  padding: 0.2rem 0.4rem;
+  border: 0;
+  color: rgb(255 248 238 / 55%);
+  background: none;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.nav-item__icon {
+  font-size: 1.25rem;
+  filter: grayscale(0.4) opacity(0.75);
+}
+
+.nav-item.is-active {
+  color: #66e39b;
+}
+
+.nav-item.is-active .nav-item__icon {
+  filter: none;
+}
+
+/* During a game the feed nav slides away — the WebGL layer owns the screen. */
+.feed.has-active-game ~ .bottom-nav {
+  transform: translateY(100%);
+}
+
 .game-card.is-playing {
   position: fixed;
   inset: 0;
@@ -129,22 +285,24 @@ body {
   width: 100%;
   height: 100dvh;
   margin: 0;
+  border-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  opacity: 1;
+  transform: none;
   animation: card-push-in 650ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.game-card.is-playing::before {
-  inset: 0;
-  border: 0;
-  border-radius: 0;
+.game-card.is-playing::after {
+  opacity: 0;
 }
 
 .companion.is-playing {
   z-index: 11;
 }
 
-.game-card.is-playing .game-card__copy {
+.game-card.is-playing .game-card__chrome {
   opacity: 0;
-  transition: opacity 160ms ease;
 }
 
 .feed.has-active-game {
@@ -207,15 +365,19 @@ body {
 
 @keyframes card-push-in {
   from {
-    clip-path: inset(9dvh max(0px, calc((100vw - 32rem) / 2)));
+    clip-path: inset(var(--feed-pad) max(var(--card-gutter), calc((100vw - var(--card-max)) / 2)) round 1.85rem);
   }
 
   to {
-    clip-path: inset(0);
+    clip-path: inset(0 round 0);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .game-card {
+    transition: none;
+  }
+
   .game-card.is-playing {
     animation-duration: 1ms;
   }
