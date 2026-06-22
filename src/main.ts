@@ -12,8 +12,9 @@ const FEED_YAW = Math.PI / 5;
 const LEAP_YAW = FEED_YAW + Math.PI / 2;
 const TURN_DURATION_SECONDS = 0.32;
 const SIZE_DURATION_SECONDS = 0.65;
+const SHRINK_DELAY_SECONDS = 0.25;
 const FEED_SIZE = 0.34;
-const PLAY_SIZE = 0.5;
+const PLAY_SIZE = 0.2;
 const FADE_START_PROGRESS = 0.78;
 const WAVE_INTERVAL_MS = 60_000;
 const JAW_TEST_CYCLE_SECONDS = 1;
@@ -104,8 +105,8 @@ const resize = (): void => {
   camera.updateProjectionMatrix();
 };
 
-const sizeTo = (target: number): void => {
-  sizeStartedAt = timer.getElapsed();
+const sizeTo = (target: number, delaySeconds = 0): void => {
+  sizeStartedAt = timer.getElapsed() + delaySeconds;
   sizeFrom = displaySize;
   sizeTarget = target;
 };
@@ -220,7 +221,7 @@ const startLeap = (): void => {
   companion.classList.add('is-playing');
   feed.classList.add('has-active-game');
   closeButton.hidden = false;
-  sizeTo(PLAY_SIZE);
+  sizeTo(PLAY_SIZE, SHRINK_DELAY_SECONDS);
   resize();
 };
 

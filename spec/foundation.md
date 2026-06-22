@@ -77,13 +77,14 @@ open risk are the same task.
 2. A single persistent full-viewport three.js context renders the companion over the
    native feed and becomes the focused game's WebGL layer on commit (spec §9.2). The
    canvas never shrinks around the character; camera/model framing controls apparent size.
-3. `assets/bunnyboy-animated.glb` loads and plays `idle` at roughly one-third viewport
+3. `assets/bunnyboy-rigged.glb` loads and plays `idle` at roughly one-third viewport
    height in the lower-left; it is one traveling character, never replicated per card.
 4. Tap first eases the character through a 90-degree turn toward the card; once the turn
    completes, the card's full-frame push-in and the character's `leap` animation start
-   together. The leap targets card center; a white fade covers the animation-to-idle reset,
-   then reveals the character centered in the viewport. The WebGL layer takes over for the
-   transition (spec §3.3), then returns to the feed on swipe-up or close.
+   together. The leap targets card center; 250 ms after it begins, the character starts
+   shrinking to roughly one-fifth viewport height. A white fade covers the animation-to-idle
+   reset, then reveals the character centered in the viewport. The WebGL layer takes over
+   for the transition (spec §3.3), then returns to the feed on swipe-up or close.
 
 **What it proves:** that the HTML→WebGL handoff is seamless (or reveals it isn't), on a real
 phone, with the real character. If the handoff is clean, the hybrid-rendering architecture is
