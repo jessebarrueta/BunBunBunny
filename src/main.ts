@@ -16,7 +16,14 @@ const FEED_SIZE = 0.34;
 const PLAY_SIZE = 0.5;
 const FADE_START_PROGRESS = 0.78;
 const WAVE_INTERVAL_MS = 60_000;
+const JAW_TEST_CYCLE_SECONDS = 1;
+const JAW_TEST_CLOSED_ROTATION = THREE.MathUtils.degToRad(-40);
+// GLTFLoader removes reserved colons from runtime node names.
+const JAW_BONE_NAME = 'mixamorigJaw';
+const X_AXIS = new THREE.Vector3(1, 0, 0);
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
+const jawTestRotation = new THREE.Quaternion();
+const jawRestRotation = new THREE.Quaternion();
 const centerOffset = new THREE.Vector3();
 const rootOffset = new THREE.Vector3();
 const fringeViewport = new THREE.Vector2(1, 1);
@@ -62,6 +69,7 @@ let focusedCard = initialCard;
 let playingCard: HTMLElement | undefined;
 let mixer: THREE.AnimationMixer | undefined;
 let character: THREE.Group | undefined;
+let jawBone: THREE.Bone | undefined;
 let characterCenter = new THREE.Vector3();
 let characterBaseScale = 1;
 let characterWidth = 1;
@@ -81,6 +89,11 @@ let leapStartedAt: number | undefined;
 let fadeStarted = false;
 let handoffId = 0;
 let waveTimer: number | undefined;
+
+// ponytail: temporary rig smoke test; replace with gameplay-driven mouth poses.
+const jawTestAngle = (elapsedSeconds: number): number =>
+  JAW_TEST_CLOSED_ROTATION *
+  (1 - Math.cos((elapsedSeconds / JAW_TEST_CYCLE_SECONDS) * Math.PI * 2)) / 2;
 
 const resize = (): void => {
   const { clientWidth, clientHeight } = renderer.domElement;
@@ -285,6 +298,10 @@ const render = (): void => {
   const delta = timer.getDelta();
   const elapsed = timer.getElapsed();
   mixer?.update(delta);
+  if (jawBone) {
+    jawTestRotation.setFromAxisAngle(X_AXIS, jawTestAngle(elapsed));
+    jawBone.quaternion.copy(jawRestRotation).multiply(jawTestRotation);
+  }
   if (sizeStartedAt !== undefined) {
     const progress = (elapsed - sizeStartedAt) / SIZE_DURATION_SECONDS;
     displaySize = THREE.MathUtils.lerp(sizeFrom, sizeTarget, easeInOutCubic(progress));
@@ -308,7 +325,7 @@ const render = (): void => {
 };
 renderer.setAnimationLoop(render);
 
-const modelUrl = new URL('../assets/bunnyboy-animated.glb', import.meta.url).href;
+const modelUrl = new URL('../assets/bunnyboy-rigged.glb', import.meta.url).href;
 new GLTFLoader().load(
   modelUrl,
   (gltf) => {
@@ -321,6 +338,13 @@ new GLTFLoader().load(
     characterHeight = size.y * characterBaseScale;
     gltf.scene.rotation.y = FEED_YAW;
     character = gltf.scene;
+    const loadedJaw = gltf.scene.getObjectByName(JAW_BONE_NAME);
+    if (loadedJaw instanceof THREE.Bone) {
+      jawBone = loadedJaw;
+      jawRestRotation.copy(loadedJaw.quaternion);
+    } else {
+      console.warn(`${JAW_BONE_NAME} was not found in the character rig.`);
+    }
     scene.add(gltf.scene);
     mixer = new THREE.AnimationMixer(gltf.scene);
     mixer.addEventListener('finished', () => {
